@@ -19,6 +19,8 @@ import { notificationRouter } from "./routes/notificationRoutes.js";
 
 import { analyticsRouter } from "./routes/analyticsRoutes.js";
 import { seoRouter } from "./routes/seoRoutes.js";
+import aiChatRoutes from "./routes/aiChatRoutes.js";
+import integrationRoutes from "./routes/integrationRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -119,6 +121,12 @@ app.use("/analytics", analyticsRouter);
 
 // SEO routes
 app.use("/seo", seoRouter);
+
+// Mount AI chat routes under `/ai`
+app.use("/ai", aiChatRoutes);
+
+// Mount integration routes under `/integration`
+app.use("/integration", integrationRoutes);
 
 
 // ERROR HANDLING MIDDLEWARE
