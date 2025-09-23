@@ -1,6 +1,6 @@
 // routes/authRoutes.js
 import express from "express";
-import { authenticateToken, rateLimit } from "../middleware/auth.js";
+import { authenticateToken, applyRateLimit } from "../middleware/auth.js";
 import {
   signup,
   signupWithCredentials,
@@ -11,34 +11,33 @@ import {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  refreshToken,
+  verifyOTP,
 } from "../controllers/authController.js";
 
 const router = express.Router();
 
-const authRateLimit = rateLimit(20, 15 * 60 * 1000); // 20 requests per 15 minutes
+// Strict rate limiting for sensitive authentication endpoints
+const authRateLimit = applyRateLimit(20, 15 * 60 * 1000); 
+const strictAuthRateLimit = applyRateLimit(5, 15 * 60 * 1000);
+const generalRateLimit = applyRateLimit(100, 15 * 60 * 1000);
 
-// Authentication Routes
-router.post("/signup", authRateLimit, signup);
-router.post("/signup-credentials", authRateLimit, signupWithCredentials);
-router.post("/login", authRateLimit, login);
-router.post("/logout", authenticateToken, logout);
+// Public routes
+router.post("/signup", strictAuthRateLimit, signup);
+router.post("/signup-credentials", strictAuthRateLimit, signupWithCredentials);
+router.post("/login", strictAuthRateLimit, login);
 
-// Password Management
-router.post("/forgot-password", authRateLimit, forgotPassword);
-router.post("/reset-password", authRateLimit, resetPassword);
-router.post("/verify-email", verifyEmail);
+router.post("/forgot-password", strictAuthRateLimit, forgotPassword);
+router.post("/reset-password", strictAuthRateLimit, resetPassword);
 
-// Profile Management
-router.get("/profile", authenticateToken, getProfile);
-router.put("/profile", authenticateToken, updateProfile);
+router.post("/verify-email", authRateLimit, verifyEmail);
+router.post("/verify-otp", authRateLimit, verifyOTP);
 
-// Health check endpoint
-router.get("/health", (req, res) => {
-  res.json({
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    version: process.env.API_VERSION || "1.0.0",
-  });
-});
+router.post("/refresh", authRateLimit, refreshToken);
+
+// Protected routes
+router.get("/profile", generalRateLimit, authenticateToken, getProfile);
+router.put("/profile", authRateLimit, authenticateToken, updateProfile);
+router.post("/logout", generalRateLimit, authenticateToken, logout);
 
 export default router;

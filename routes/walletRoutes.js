@@ -1,13 +1,16 @@
 import express from "express";
 import { authenticateToken } from "../middleware/auth.js";
-import { getWalletBalance, addFunds } from "../controllers/walletController.js";
+import {
+  getWalletBalance,
+  addFunds,
+} from "../controllers/walletController.js";
 
-const router = express.Router();
+const walletRouter = express.Router();
 
-// Get Wallet Balance
-router.get("/balance", authenticateToken, getWalletBalance);
+// Get wallet balance
+walletRouter.get("/balance", authenticateToken, getWalletBalance);
 
-// Add Funds (Mock implementation)
-router.post("/add-funds", authenticateToken, addFunds);
+// Add funds to wallet
+walletRouter.post("/add-funds", authenticateToken, addFunds);
 
-export default router;
+export { walletRouter };

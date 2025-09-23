@@ -12,24 +12,14 @@ import { authenticateToken, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// --------------------
-// Protected routes (require authentication)
-// --------------------
-router.use(authenticateToken); // All routes require a valid Firebase token
+// All routes require authentication
+router.use(authenticateToken);
 
-// Setup a new integration or update existing
-router.post("/setup", requireRole(["owner"]), setupIntegration);
-
-// Fetch reviews from external platforms
-router.post("/fetch-reviews", requireRole(["owner"]), fetchExternalReviews);
-
-// Get all integrations for a business
-router.get("/business/:businessId", requireRole(["owner"]), getBusinessIntegrations);
-
-// Remove an integration
-router.delete("/remove/:integrationId", requireRole(["owner"]), removeIntegration);
-
-// Update integration status (active/inactive/error)
-router.patch("/update-status/:integrationId", requireRole(["owner"]), updateIntegrationStatus);
+// Change "owner" to "client" since that's what business owners have in your system
+router.post("/setup", requireRole(["client"]), setupIntegration);
+router.post("/fetch-reviews", requireRole(["client"]), fetchExternalReviews);
+router.get("/business/:businessId", requireRole(["client"]), getBusinessIntegrations);
+router.delete("/remove/:integrationId", requireRole(["client"]), removeIntegration);
+router.patch("/update-status/:integrationId", requireRole(["client"]), updateIntegrationStatus);
 
 export default router;

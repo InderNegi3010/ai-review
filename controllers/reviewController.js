@@ -20,9 +20,9 @@ export const getBusinessReviews = async (req, res) => {
 
     if (businessError || !business) {
       console.log("❌ Business not found or access denied");
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "Access denied to this business",
-        code: "BUSINESS_ACCESS_DENIED"
+        code: "BUSINESS_ACCESS_DENIED",
       });
     }
 
@@ -45,10 +45,11 @@ export const getBusinessReviews = async (req, res) => {
       query = query.eq("source", source);
     }
 
-    const { data: reviews, error: reviewsError, count } = await query.range(
-      offset,
-      offset + parseInt(limit) - 1
-    );
+    const {
+      data: reviews,
+      error: reviewsError,
+      count,
+    } = await query.range(offset, offset + parseInt(limit) - 1);
 
     if (reviewsError) {
       console.error("❌ Reviews query error:", reviewsError);
@@ -67,15 +68,14 @@ export const getBusinessReviews = async (req, res) => {
       },
       business: {
         id: business.id,
-        name: business.name
-      }
+        name: business.name,
+      },
     });
-
   } catch (error) {
     console.error("❌ Get business reviews error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to retrieve reviews",
-      code: "REVIEWS_FETCH_FAILED"
+      code: "REVIEWS_FETCH_FAILED",
     });
   }
 };
@@ -86,44 +86,45 @@ export const getSingleReview = async (req, res) => {
 
     const { data: review, error } = await supabase
       .from("reviews")
-      .select(`
+      .select(
+        `
         *,
         businesses!inner(id, name, owner_id)
-      `)
+      `
+      )
       .eq("id", req.params.reviewId)
       .single();
 
     if (error || !review) {
       console.log("❌ Review not found");
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Review not found",
-        code: "REVIEW_NOT_FOUND"
+        code: "REVIEW_NOT_FOUND",
       });
     }
 
     // Check business ownership
     if (review.businesses.owner_id !== req.user.uid) {
       console.log("❌ Access denied to review");
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "Access denied to this review",
-        code: "REVIEW_ACCESS_DENIED"
+        code: "REVIEW_ACCESS_DENIED",
       });
     }
 
     console.log("✅ Review retrieved successfully");
 
-    res.json({ 
+    res.json({
       review: {
         ...review,
-        business: review.businesses
-      }
+        business: review.businesses,
+      },
     });
-
   } catch (error) {
     console.error("❌ Get single review error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to retrieve review",
-      code: "REVIEW_FETCH_FAILED"
+      code: "REVIEW_FETCH_FAILED",
     });
   }
 };
@@ -138,36 +139,38 @@ export const addReplyToReview = async (req, res) => {
     if (!reviewId || !replyText?.trim()) {
       return res.status(400).json({
         error: "Review ID and reply text are required",
-        code: "MISSING_FIELDS"
+        code: "MISSING_FIELDS",
       });
     }
 
     // Get review and verify ownership
     const { data: review, error: reviewError } = await supabase
       .from("reviews")
-      .select(`
+      .select(
+        `
         id,
         business_id,
         customer_name,
         rating,
         businesses!inner(owner_id, name)
-      `)
+      `
+      )
       .eq("id", reviewId)
       .single();
 
     if (reviewError || !review) {
       console.log("❌ Review not found");
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Review not found",
-        code: "REVIEW_NOT_FOUND"
+        code: "REVIEW_NOT_FOUND",
       });
     }
 
     if (review.businesses.owner_id !== req.user.uid) {
       console.log("❌ Access denied to review");
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "Access denied to this review",
-        code: "REVIEW_ACCESS_DENIED"
+        code: "REVIEW_ACCESS_DENIED",
       });
     }
 
@@ -178,9 +181,9 @@ export const addReplyToReview = async (req, res) => {
         metadata: {
           reply_text: replyText.trim(),
           replied_at: new Date().toISOString(),
-          reply_type: "manual"
+          reply_type: "manual",
         },
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("id", reviewId)
       .select()
@@ -193,16 +196,15 @@ export const addReplyToReview = async (req, res) => {
 
     console.log("✅ Reply added successfully");
 
-    res.json({ 
-      message: "Reply added successfully", 
-      review: updatedReview 
+    res.json({
+      message: "Reply added successfully",
+      review: updatedReview,
     });
-
   } catch (error) {
     console.error("❌ Add reply error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to add reply",
-      code: "REPLY_ADD_FAILED"
+      code: "REPLY_ADD_FAILED",
     });
   }
 };
@@ -217,29 +219,31 @@ export const updateReview = async (req, res) => {
     // Get review and verify ownership
     const { data: review, error: reviewError } = await supabase
       .from("reviews")
-      .select(`
+      .select(
+        `
         id,
         businesses!inner(owner_id)
-      `)
+      `
+      )
       .eq("id", reviewId)
       .single();
 
     if (reviewError || !review) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Review not found",
-        code: "REVIEW_NOT_FOUND"
+        code: "REVIEW_NOT_FOUND",
       });
     }
 
     if (review.businesses.owner_id !== req.user.uid) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "Access denied",
-        code: "REVIEW_ACCESS_DENIED"
+        code: "REVIEW_ACCESS_DENIED",
       });
     }
 
     const updates = { updated_at: new Date().toISOString() };
-    if (typeof is_verified === 'boolean') {
+    if (typeof is_verified === "boolean") {
       updates.is_verified = is_verified;
     }
 
@@ -254,16 +258,15 @@ export const updateReview = async (req, res) => {
 
     console.log("✅ Review updated successfully");
 
-    res.json({ 
-      message: "Review updated successfully", 
-      review: updatedReview 
+    res.json({
+      message: "Review updated successfully",
+      review: updatedReview,
     });
-
   } catch (error) {
     console.error("❌ Update review error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to update review",
-      code: "REVIEW_UPDATE_FAILED"
+      code: "REVIEW_UPDATE_FAILED",
     });
   }
 };
@@ -282,9 +285,9 @@ export const getReviewSummary = async (req, res) => {
       .single();
 
     if (businessError || !business) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "Access denied to this business",
-        code: "BUSINESS_ACCESS_DENIED"
+        code: "BUSINESS_ACCESS_DENIED",
       });
     }
 
@@ -312,58 +315,61 @@ export const getReviewSummary = async (req, res) => {
     // Calculate recent reviews (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const recentReviews = reviews.filter(r => 
-      new Date(r.created_at) > thirtyDaysAgo
+    const recentReviews = reviews.filter(
+      (r) => new Date(r.created_at) > thirtyDaysAgo
     ).length;
 
     const totalReviews = reviews.length;
-    const averageRating = totalReviews > 0
-      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
-      : 0;
+    const averageRating =
+      totalReviews > 0
+        ? (
+            reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+          ).toFixed(1)
+        : 0;
 
     console.log("✅ Review summary calculated");
 
     res.json({
       business: {
         id: business.id,
-        name: business.name
+        name: business.name,
       },
       summary: {
         totalReviews,
         averageRating: parseFloat(averageRating),
         recentReviews,
         ratingDistribution,
-        sourceDistribution
-      }
+        sourceDistribution,
+      },
     });
-
   } catch (error) {
     console.error("❌ Review summary error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to get review summary",
-      code: "SUMMARY_FETCH_FAILED"
+      code: "SUMMARY_FETCH_FAILED",
     });
   }
 };
 
 export const submitPublicReview = async (req, res) => {
   try {
-    const { businessId, customerName, customerEmail, rating, reviewText } = req.body;
+    const { businessId, customerName, customerEmail, rating, reviewText } =
+      req.body;
 
     console.log("📝 Public review submission for business:", businessId);
 
     // Validate required fields
     if (!businessId || !customerName || !rating) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Business ID, customer name, and rating are required",
-        code: "MISSING_FIELDS"
+        code: "MISSING_FIELDS",
       });
     }
 
     if (rating < 1 || rating > 5) {
       return res.status(400).json({
         error: "Rating must be between 1 and 5",
-        code: "INVALID_RATING"
+        code: "INVALID_RATING",
       });
     }
 
@@ -376,16 +382,16 @@ export const submitPublicReview = async (req, res) => {
 
     if (businessError || !business) {
       console.log("❌ Business not found");
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Business not found",
-        code: "BUSINESS_NOT_FOUND"
+        code: "BUSINESS_NOT_FOUND",
       });
     }
 
     if (!business.is_active) {
       return res.status(400).json({
         error: "Business is not accepting reviews",
-        code: "BUSINESS_INACTIVE"
+        code: "BUSINESS_INACTIVE",
       });
     }
 
@@ -398,10 +404,12 @@ export const submitPublicReview = async (req, res) => {
       review_text: reviewText?.trim() || null,
       source: "api", // Since it's coming through your API
       is_verified: true, // Auto-verify API submissions
+      external_platform: null, // 👈 ensure null
+      external_review_id: null, // 👈 ensure null
       metadata: {
         submitted_via: "public_api",
-        ip_address: req.ip || 'unknown'
-      }
+        ip_address: req.ip || "unknown",
+      },
     };
 
     const { data: newReview, error: insertError } = await supabase
@@ -422,15 +430,14 @@ export const submitPublicReview = async (req, res) => {
       review: newReview,
       business: {
         id: business.id,
-        name: business.name
-      }
+        name: business.name,
+      },
     });
-
   } catch (error) {
     console.error("❌ Submit public review error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to submit review",
-      code: "REVIEW_SUBMIT_FAILED"
+      code: "REVIEW_SUBMIT_FAILED",
     });
   }
 };
@@ -443,25 +450,27 @@ export const deleteReview = async (req, res) => {
     // Get review and verify ownership
     const { data: review, error: reviewError } = await supabase
       .from("reviews")
-      .select(`
+      .select(
+        `
         id,
         customer_name,
         businesses!inner(owner_id, name)
-      `)
+      `
+      )
       .eq("id", reviewId)
       .single();
 
     if (reviewError || !review) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Review not found",
-        code: "REVIEW_NOT_FOUND"
+        code: "REVIEW_NOT_FOUND",
       });
     }
 
     if (review.businesses.owner_id !== req.user.uid) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "Access denied",
-        code: "REVIEW_ACCESS_DENIED"
+        code: "REVIEW_ACCESS_DENIED",
       });
     }
 
@@ -479,15 +488,14 @@ export const deleteReview = async (req, res) => {
       message: "Review deleted successfully",
       deletedReview: {
         id: review.id,
-        customer_name: review.customer_name
-      }
+        customer_name: review.customer_name,
+      },
     });
-
   } catch (error) {
     console.error("❌ Delete review error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to delete review",
-      code: "REVIEW_DELETE_FAILED"
+      code: "REVIEW_DELETE_FAILED",
     });
   }
 };

@@ -1,11 +1,10 @@
 // controllers/aiChatController.js
 import supabase from "../config/supabase.js";
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from "openai"; 
 
-
-// Initialize the client with your API key
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+// Initialize OpenAI (add your API key to .env)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Start new AI conversation
@@ -55,7 +54,7 @@ export const startConversation = async (req, res) => {
 4. Help with social media content
 
 How can I assist you today?`,
-      ai_provider: 'ai',
+      ai_provider: 'openai',
       tokens_used: 0,
       processing_time_ms: 0
     };
@@ -85,7 +84,7 @@ How can I assist you today?`,
 // Send message to AI and get response
 export const sendMessage = async (req, res) => {
   try {
-    const { conversationId, message, reviewId = null, aiProvider = 'ai' } = req.body;
+    const { conversationId, message, reviewId = null, aiProvider = 'openai' } = req.body;
 
     console.log("💬 Processing AI message for conversation:", conversationId);
 
@@ -142,7 +141,7 @@ Date: ${new Date(review.created_at).toLocaleDateString()}`;
     }
 
     // Ensure conversation_type is defined and safe to call replace
-    const conversationTypeText = (conversation.conversation_type || "general").replace('_', ' ');
+const conversationTypeText = conversation.conversation_type ? conversation.conversation_type.replace(/_/g, ' ') : 'general';
 
     // Prepare system prompt
     const systemPrompt = `You are an AI assistant for ${conversation.businesses.name}, a ${conversation.businesses.category} business located in ${conversation.businesses.location}.
@@ -175,8 +174,8 @@ Current conversation context: You're helping with ${conversationTypeText}.${revi
     let tokensUsed = 0;
 
     try {
-      if (aiProvider === 'ai') {
-        const completion = await ai.chat.completions.create({
+      if (aiProvider === 'openai') {
+        const completion = await openai.chat.completions.create({
           model: "gpt-3.5-turbo",
           messages: messages,
           max_tokens: 500,
@@ -390,7 +389,7 @@ Format each review as JSON with: rating, reviewText, sentiment
 Return only valid JSON array.`;
 
     try {
-      const completion = await ai.chat.completions.create({
+      const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 1000,
@@ -430,7 +429,7 @@ Return only valid JSON array.`;
         rating: suggestion.rating,
         review_text: suggestion.reviewText,
         sentiment: suggestion.sentiment,
-        ai_provider: 'ai'
+        ai_provider: 'openai'
       }));
 
       await supabase.from("ai_review_suggestions").insert(suggestionsToSave);
